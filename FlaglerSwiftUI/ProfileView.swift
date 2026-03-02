@@ -38,7 +38,7 @@ struct ProfileView: View {
                     .font(Font.title3.bold())
                     .italic()
             }
-            .padding()
+            .padding()  //This is a modifier for the VStack
             
             
         }
