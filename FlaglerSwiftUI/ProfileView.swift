@@ -21,7 +21,7 @@ struct ProfileView: View {
     // Here, it stores the text currently typed by the user in the TextField.
     // Because it uses @State, SwiftUI automatically updates the UI when the value changes.
     @State private var newComment: String = ""
-
+    
     // Stores a list of submitted comments entered by the user.
     // The view refreshes automatically whenever a new comment is added to this array.
     @State private var comments: [String] = []
@@ -61,6 +61,58 @@ struct ProfileView: View {
                         .cornerRadius(12)
                 }
                 .padding()
+                
+                //Use CMD+A to select All, then CTRL+I to format
+                
+                // Button that posts a new comment
+                Button(action: {
+                    
+                    // Remove extra spaces from the beginning and end of the text
+                    // This prevents users from submitting comments that contain only spaces
+                    if !newComment.trimmingCharacters(in:  .whitespaces).isEmpty {
+                        
+                        // Insert the new comment at the beginning of the array (index 0)
+                        // This makes the most recent comment appear at the top of the list
+                        comments.insert(newComment, at: 0)
+                        
+                        // Clear the text field after posting the comment
+                        newComment = ""
+                    }
+                }) {
+                    Text("Post Comment 🎉")
+                        .foregroundColor(.white)
+                        .padding()  //within the container, margin for neighbots
+                        .frame(maxWidth: .infinity)//auto scaling constraint
+                        .background(Color.orange)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal)
+                
+                // ScrollView allows the user to scroll when there are many comments
+                ScrollView {
+                    
+                    // VStack arranges all comment items vertically
+                    VStack(alignment: .leading, spacing: 10) {
+                        
+                        // Loop through each comment stored in the comments array
+                        // SwiftUI automatically updates the UI when the array changes
+                        ForEach(comments, id: \.self) { comment in
+                            
+                            // Display the comment text
+                            //\() is called interpolation in SwiftUI/Swift
+                            Text("💬 \(comment)")
+                                .padding()
+                                .background(Color.white.opacity(0.15))
+                                .cornerRadius(10)
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding()
+                }
+                
+                // Spacer pushes content upward and helps control layout spacing
+                Spacer()
+                
                 
             }
             .padding()  //This is a modifier for the VStack
