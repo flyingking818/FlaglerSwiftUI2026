@@ -14,7 +14,7 @@ import SwiftUI
 // View represents any UI element in SwifUI. They don't start with dot!
 // Modifiers are methods that change a view. They start with dot!!!
 
-struct ProfileView: View {
+struct ProfileViewV2: View {
     // @State is a SwiftUI property wrapper used to store view state.
     // When the value changes, SwiftUI automatically refreshes the UI.
     

@@ -105,10 +105,17 @@ struct ProfileView: View {
                                 .background(Color.white.opacity(0.15))
                                 .cornerRadius(10)
                                 .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, alignment: .leading)   // Update: Align bubble left
                         }
                     }
                     .padding()
                 }
+                .frame(maxWidth: .infinity)   // Update: Expand to screen width
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.1))
+                )
+                .padding(.horizontal)
                 
                 // Spacer pushes content upward and helps control layout spacing
                 Spacer()

@@ -11,7 +11,18 @@ import SwiftUI
 struct FlaglerSwiftUIApp: App {
     var body: some Scene {
         WindowGroup {
-            ProfileView()
+            TabView{
+                ProfileView()
+                    .tabItem {
+                        Label("Profile", systemImage: "person.fill")
+                    }
+                
+                CalculatorView()
+                    .tabItem {
+                        Label("Calculator", systemImage: "plus.slash.minus")
+                    }
+                                    
+            }
         }
     }
 }
