@@ -160,7 +160,8 @@ struct CalculatorView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal) //default 16 pts
+                    
                 }
 
                 // MARK: - Generate Button Grid
@@ -177,8 +178,8 @@ struct CalculatorView: View {
                         }
                     }
                 }
-            }
-            .padding()
+            }.padding()
+            
         }
     }
 
