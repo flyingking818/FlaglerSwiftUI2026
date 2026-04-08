@@ -21,7 +21,11 @@ struct FlaglerSwiftUIApp: App {
                     .tabItem {
                         Label("Calculator", systemImage: "plus.slash.minus")
                     }
-                                    
+                         
+                TipView()
+                    .tabItem {
+                        Label("Tip Cal", systemImage: "dollarsign")
+                    }
             }
         }
     }
