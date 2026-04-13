@@ -32,8 +32,10 @@ struct TipView: View {
                   // Picker bound to vm.tipPercent
                   // Tip: Picker("Category", selection: $vm.category)
                   Picker("Tip", selection: $vm.tipPercent) {
-                      ForEach(vm.tipPresets, id: \.self) { pct in
+                      ForEach(vm.tipPresets, id: \.self) { pct in   //this is a temp variable representing any item
                           Text("\(Int(pct))%").tag(pct)
+                          
+                          //<option value="10">10 percentage</option>
                       }
                   }
                   //.pickerStyle()
@@ -77,6 +79,8 @@ struct TipView: View {
               }
           }
           .navigationTitle("Tip Calculator")
+          //.onChange(of: vm.tipPercent) {
+          //vm.tipPercentChanged()
       }
   }
 }
