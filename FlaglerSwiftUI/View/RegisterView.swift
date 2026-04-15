@@ -1,86 +1,105 @@
-// TipView.swift
 // ─────────────────────────────────────────────────────
-// LAYER:   View
-// RULE:    SwiftUI layout only. No formulas. No business logic.
-//          Calls vm.calculate() and vm.reset() — nothing else.
-// Tip: This is your ConverterView.swift
+// This View shows the registration form.
+// When registration succeeds, authVM.isLoggedIn becomes true,
 // ─────────────────────────────────────────────────────
-
 //  Last updated by Jeremy Wang on 4/1/26.
 
+import SwiftUI
 
-import SwiftUI   // Only the View imports SwiftUI
+struct RegisterView: View {
 
-struct TipView: View {
+    // Receives the same AuthViewModel from LoginView
+    @ObservedObject var authVM: AuthViewModel
 
-  // @StateObject — this View owns the ViewModel.
-  // Tip: @StateObject var vm = ConverterViewModel()
-  @StateObject private var vm = TipViewModel()
+    // Local state for form fields
+    @State private var email           = ""
+    @State private var password        = ""
+    @State private var confirmPassword = ""
 
-  var body: some View {
-      NavigationStack {  //This is not a layout tool. It manages a stack of screens that the user can push onto and pop off of — like the back button behavior you see in every iPhone app. Here's it's giving us the app title, which is tool. :)
-          Form {  //Need the form wrap for getting user inputs! Make sure to include this for your converter app!
+    // Used to dismiss this sheet when done
+    @Environment(\.dismiss) var dismiss
 
-              // ─── Input section ────────────────────────────
-              Section("Bill Details") {
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
 
-                  // TextField bound to vm.billText with $ (two-way)
-                  // Tip: TextField("Enter value", text: $vm.inputText)
-                  TextField("Bill amount ($)", text: $vm.billText)
-                      .keyboardType(.decimalPad)
+                Spacer()
 
-                  // Picker bound to vm.tipPercent
-                  // Tip: Picker("Category", selection: $vm.category)
-                  Picker("Tip", selection: $vm.tipPercent) {
-                      ForEach(vm.tipPresets, id: \.self) { pct in   //this is a temp variable representing any item
-                          Text("\(Int(pct))%").tag(pct)
-                          
-                          //<option value="10">10 percentage</option>
-                      }
-                  }
-                  //.pickerStyle()
+                Text("Create Account")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
 
-                  // Toggle bound to vm.splitEvenly
-                  // Tip: Toggle("Reverse", isOn: $vm.isReversed)
-                  Toggle("Split the bill", isOn: $vm.splitEvenly)
+                Text("Register to get started")
+                    .foregroundStyle(.secondary)
 
-                  if vm.splitEvenly {
-                      Picker("People", selection: $vm.splitCount) {
-                          ForEach(vm.splitOptions, id: \.self) { n in
-                              Text("\(n) people").tag(n)
-                          }
-                      }
-                  }
-              }
+                // ── Input fields ─────────────────────────────
+                VStack(spacing: 14) {
 
-              //─── Action buttons ───────────────────────────
-              // Buttons call ViewModel methods — never do math here
-              // Tip: Button("Convert") { vm.convert() }
-              Section {
-                  Button("Calculate") { vm.calculate() }
-                      .frame(maxWidth: .infinity)
-                  Button("Reset", role: .destructive) { vm.reset() }
-                      .frame(maxWidth: .infinity)
-              }
+                    TextField("Email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
 
-              // ─── Error feedback ───────────────────────────
-              if let error = vm.errorMsg {
-                  Section { Text(error).foregroundStyle(.red) }
-              }
+                    SecureField("Password (min 6 characters)", text: $password)  //Masking vs. encryption
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
 
-              // ─── Result display ───────────────────────────
-              // View just reads pre-formatted strings from ViewModel.
-              // Tip: Text(vm.resultText)
-              Section("Result") {
-                  LabeledContent("Tip",   value: vm.tipText)
-                  LabeledContent("Total", value: vm.totalText)
-                  LabeledContent("Each",  value: vm.eachText)
-                      .bold()
-              }
-          }
-          .navigationTitle("Tip Calculator")
-          //.onChange(of: vm.tipPercent) {
-          //vm.tipPercentChanged()
-      }
-  }
+                    SecureField("Confirm Password", text: $confirmPassword)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal)
+
+                // ── Error message ────────────────────────────
+                if let error = authVM.errorMessage {
+                    Text(error)
+                        .foregroundStyle(.red)
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+
+                // ── Register button ──────────────────────────
+                Button {
+                    // Local validation before calling Firebase
+                    guard password == confirmPassword else {
+                        authVM.errorMessage = "Passwords do not match."
+                        return
+                    }
+                    authVM.register(email: email, password: password)
+                } label: {
+                    Group {
+                        if authVM.isLoading {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Register")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.green)
+                    .foregroundStyle(.white)
+                    .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                .disabled(authVM.isLoading)
+
+                // Back to login
+                Button("Already have an account? Log In") {
+                    dismiss()
+                }
+                .font(.subheadline)
+                .foregroundStyle(.blue)
+
+                Spacer()
+            }
+            .navigationTitle("")
+            .navigationBarHidden(true)
+        }
+    }
 }

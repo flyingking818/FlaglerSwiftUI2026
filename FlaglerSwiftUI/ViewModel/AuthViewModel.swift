@@ -1,83 +1,160 @@
 //
-//  TipViewModel.swift
+//  AuthViewModel.swift
 //  FlaglerSwiftUI
 //
 //  Last Updated by Jeremy Wang on 4/1/26.
+// ============================================================
+// This ViewModel handles Login and Registration.
+// It talks to Firebase Auth and publishes state to the Views.
 //
-
-// ─────────────────────────────────────────────────────
-// LAYER:   ViewModel
-// RULE:    No UI layout. Owns @Published state.
-//          Calls Model. Formats results as Strings.
-// Tip: This is your ConverterViewModel.swift
-// ─────────────────────────────────────────────────────
+//  Same pattern as ConverterViewModel —
+//   @Published properties + intent functions
+// ============================================================
 
 import Foundation
 import Combine
+import FirebaseAuth   // Firebase Authentication SDK
 
-// @MainActor keeps UI updates on the main thread (safe practice)
 @MainActor
-class TipViewModel: ObservableObject {
+class AuthViewModel: ObservableObject {
 
-   // ─── @Published state ─────────────────────────────────
-   // Every property here has a matching UI control in the View.
-   // When any @Published property changes, SwiftUI rebuilds the View.
-   // Tip: mirrors @Published vars in ConverterViewModel
+  // --------------------------------------------------------
+  // MARK: - @Published State
+  // --------------------------------------------------------
+  // These properties drive what the View shows.
+  // When any of these change, SwiftUI rebuilds the View.
+  // --------------------------------------------------------
 
-   @Published var billText:    String = ""       // ← TextField
-   @Published var tipPercent:  Double = 18.0    // ← Picker (tip %)
-   @Published var splitCount:  Int    = 1        // ← Picker (people)
-   @Published var splitEvenly: Bool   = false   // ← Toggle
+  // The currently signed-in Firebase user
+  // nil means nobody is logged in
+  @Published var currentUser: User? = nil
 
-   // Output — formatted strings the View displays directly
-   @Published var tipText:    String  = "—"
-   @Published var totalText:  String  = "—"
-   @Published var eachText:   String  = "—"
-   @Published var errorMsg:   String? = nil
+  // Controls whether the app shows Login or the main app
+  // true  = user is logged in → show CourseListView
+  // false = not logged in     → show LoginView
+  @Published var isLoggedIn: Bool = false
 
-   // ─── Computed property for the Picker ─────────────────
-   // Tip: Your availableUnits computed property in the converter app.
-   var tipPresets: [Double]  { TipModel.tipPresets }
-   var splitOptions: [Int]  { TipModel.splitOptions }
+  // Error message to display when login/register fails
+  @Published var errorMessage: String? = nil
 
-   // ─── Action: user tapped "Calculate" ──────────────────
-   // Tip: Your convert() function
-   // Pattern: validate → call Model → format output
-   func calculate() {
-       errorMsg = nil
+  // true while Firebase is processing a request
+  // Used to show a loading spinner in the View
+  @Published var isLoading: Bool = false
 
-       // Step 1 — Validate: is the input a real number?
-       guard let bill = Double(billText), bill > 0 else {
-           errorMsg = "Please enter a valid bill amount."
-           return
-       }
+  // --------------------------------------------------------
+  // MARK: - Initializer
+  // --------------------------------------------------------
+  // Runs once when the app launches.
+  // Checks if a user is already logged in from a previous
+  // session — Firebase remembers the last logged-in user.
+  // --------------------------------------------------------
+  init() {
+      // Auth.auth().currentUser is non-nil if someone is
+      // already logged in from a previous app session
+      if let user = Auth.auth().currentUser {
+          self.currentUser = user
+          self.isLoggedIn  = true
+      }
+  }
 
-       // Step 2 — Call the Model. The ViewModel never does math.
-       let result = TipModel.calculate(
-           bill:       bill,
-           tipPercent: tipPercent,
-           splitBy:    splitEvenly ? splitCount : 1 //?Ternery operator - similar to if(logical_test, if_yes, if_no)
-       )
+  // --------------------------------------------------------
+  // MARK: - Intent: Register
+  // --------------------------------------------------------
+  // Called when the user taps "Register" in RegisterView.
+  // Creates a new account in Firebase Authentication.
+  //
+  // Parameters:
+  //   email    — the email the user typed
+  //   password — the password the user typed
+  // --------------------------------------------------------
+  func register(email: String, password: String) {
+      errorMessage = nil
+      isLoading    = true
 
-       // Step 3 — Format results for display (2 decimal places)
-       // Tip: String(format: "%.2f %@", result, toUnit)
-       tipText   = String(format: "$%.2f", result.tipAmount)
-       totalText = String(format: "$%.2f", result.totalAmount)
-       eachText  = splitEvenly
-           ? String(format: "$%.2f each", result.amountEach)
-           : totalText
-   }
+      // Basic validation before calling Firebase
+      guard !email.isEmpty, !password.isEmpty else {
+          errorMessage = "Please enter your email and password."
+          isLoading    = false
+          return
+      }
 
-   // ─── Acton: user tapped "Reset" ──────────────────────
-   // Tip: Your reset() function — clears all @Published state
-   func reset() {
-       billText    = ""
-       tipPercent  = 18.0
-       splitCount  = 1
-       splitEvenly = false
-       tipText     = "—"
-       totalText   = "—"
-       eachText    = "—"
-       errorMsg    = nil
-   }
+      guard password.count >= 6 else {
+          errorMessage = "Password must be at least 6 characters."
+          isLoading    = false
+          return
+      }
+
+      // createUser — Firebase creates the account
+      // The result comes back in a closure (async)
+      Auth.auth().createUser(withEmail: email, password: password) { result, error in
+
+          // isLoading is done — whether success or failure
+          self.isLoading = false
+
+          // If there was an error, show it to the user
+          if let error = error {
+              self.errorMessage = error.localizedDescription
+              return
+          }
+
+          // Success — store the user and flip the login flag
+          if let user = result?.user {
+              self.currentUser = user
+              self.isLoggedIn  = true
+          }
+      }
+  }
+
+  // --------------------------------------------------------
+  // MARK: - Intent: Login
+  // --------------------------------------------------------
+  // Called when the user taps "Log In" in LoginView.
+  // Signs in with an existing Firebase account.
+  // --------------------------------------------------------
+  func login(email: String, password: String) {
+      errorMessage = nil
+      isLoading    = true
+
+      guard !email.isEmpty, !password.isEmpty else {
+          errorMessage = "Please enter your email and password."
+          isLoading    = false
+          return
+      }
+
+      // signIn — Firebase checks the email/password
+      Auth.auth().signIn(withEmail: email, password: password) { result, error in
+
+          self.isLoading = false
+
+          if let error = error {
+              self.errorMessage = error.localizedDescription
+              return
+          }
+
+          if let user = result?.user {
+              self.currentUser = user
+              self.isLoggedIn  = true
+          }
+      }
+  }
+
+  // --------------------------------------------------------
+  // MARK: - Intent: Logout
+  // --------------------------------------------------------
+  // Called when the user taps "Log Out".
+  // Signs out of Firebase and returns to the Login screen.
+  // --------------------------------------------------------
+  func logout() {
+      do {
+          // try because Firebase can throw an error on signOut
+          try Auth.auth().signOut()
+
+          // Clear our local state
+          self.currentUser = nil
+          self.isLoggedIn  = false
+
+      } catch {
+          self.errorMessage = error.localizedDescription
+      }
+  }
 }
