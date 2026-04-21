@@ -1,118 +1,148 @@
 // ============================================================
-// This View shows the login form.
-// It reads from and calls methods on AuthViewModel.
-// It has zero auth logic — only layout.
+// Main screen after login.
+// Shows the list of courses fetched from Firestore.
+// Navigates to CourseDetailView and AddCourseView.
 // ============================================================
 //  Last updated by Jeremy Wang on 4/1/26.
 
-
 import SwiftUI
 
-struct LoginView: View {
+struct CourseListView: View {
 
-    // ─────────────────────────────────────────────────────
-    // AuthViewModel is passed in from the App entry point.
-    // We use @ObservedObject (not @StateObject) because the
-    // parent (the App) owns this ViewModel — we just observe it.
-    // ─────────────────────────────────────────────────────
-    @ObservedObject var authVM: AuthViewModel
+  // AuthViewModel — needed for the Log Out button
+  @ObservedObject var authVM: AuthViewModel
 
-    // ─────────────────────────────────────────────────────
-    // Local @State for the text fields.
-    // These only live inside this View — they don't need to
-    // be in the ViewModel because no other screen needs them.
-    // ─────────────────────────────────────────────────────
-    @State private var email    = ""
-    @State private var password = ""   //rehashing -> match the hashed password in the DB.
+  // CourseViewModel — owns and drives the course list
+  // @StateObject because THIS view creates the CourseViewModel
+  @StateObject private var courseVM = CourseViewModel()
 
-    // Controls whether to show the RegisterView sheet
-    @State private var showRegister = false
+  // Controls whether the AddCourse sheet is showing
+  @State private var showAddCourse = false
 
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
+  var body: some View {
+      NavigationStack {
+          Group {
 
-                Spacer()
+              // Show spinner while loading
+              if courseVM.isLoading {
+                  ProgressView("Loading courses...")
 
-                // App title
-                Text("Welcome to Flagler App!")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+              // Show message if no courses exist yet
+              } else if courseVM.courses.isEmpty {
+                  VStack(spacing: 12) {
+                      Image(systemName: "book.closed")
+                          .font(.system(size: 50))
+                          .foregroundStyle(.secondary)
+                      Text("No courses yet.")
+                          .foregroundStyle(.secondary)
+                      Text("Tap + to add your first course.")
+                          .font(.subheadline)
+                          .foregroundStyle(.secondary)
+                  }
 
-                Text("Sign in to continue")
-                    .foregroundStyle(.secondary)
+              // Show the list of courses
+              } else {
+                  List {
+                      ForEach(courseVM.courses) { course in
 
-                // ── Input fields ─────────────────────────────
-                VStack(spacing: 14) {
+                          // NavigationLink pushes CourseDetailView
+                          // when the user taps a row
+                          NavigationLink(destination: CourseDetailView(course: course)) {
+                              CourseRowView(course: course)
+                          }
+                      }
+                      // Swipe left to delete
+                      .onDelete { offsets in
+                          courseVM.deleteCourse(at: offsets)
+                      }
+                  }
+              }
+          }
+          .navigationTitle("My Courses")
 
-                    // $email — two-way binding to our @State
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
+          // ── Toolbar buttons ──────────────────────────────
+          .toolbar {
 
-                    // SecureField hides the password characters
-                    SecureField("Password", text: $password)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                }
-                .padding(.horizontal)
+              // + button in top right — opens AddCourseView
+              ToolbarItem(placement: .navigationBarTrailing) {
+                  Button {
+                      showAddCourse = true
+                  } label: {
+                      Image(systemName: "plus")
+                  }
+              }
 
-                // ── Error message ────────────────────────────
-                // Only shows when authVM.errorMessage is not nil
-                if let error = authVM.errorMessage {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .font(.subheadline)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
+              // Log Out button in top left
+              ToolbarItem(placement: .navigationBarLeading) {
+                  Button("Log Out") {
+                      authVM.logout()
+                  }
+                  .foregroundStyle(.red)
+              }
+          }
 
-                // ── Login button ─────────────────────────────
-                Button {
-                    // View calls ViewModel method — no auth logic here
-                    authVM.login(email: email, password: password)    //Here, we call different function!
-                } label: {
-                    // Show spinner while loading, text otherwise
-                    // This is a ternary — same as if/else in one line
-                    Group {
-                        if authVM.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Log In")
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundStyle(.white)
-                    .cornerRadius(10)
-                }
-                .padding(.horizontal)
-                .disabled(authVM.isLoading)   // disable while loading
+          // Error banner
+          .safeAreaInset(edge: .bottom) {
+              if let error = courseVM.errorMessage {
+                  Text(error)
+                      .foregroundStyle(.white)
+                      .padding()
+                      .background(Color.red)
+                      .cornerRadius(10)
+                      .padding()
+              }
+          }
 
-                // ── Register link ────────────────────────────
-                Button("Don't have an account? Register") {
-                    showRegister = true
-                }
-                .font(.subheadline)
-                .foregroundStyle(.blue)
+          // Fetch courses when this view appears on screen
+          // .onAppear runs once when the view loads
+          .onAppear {
+              courseVM.fetchCourses()
+          }
 
-                Spacer()
-            }
-            .navigationTitle("")
-            .navigationBarHidden(true)
+          // Show AddCourseView as a sheet
+          .sheet(isPresented: $showAddCourse) {
+              AddCourseView(courseVM: courseVM)
+          }
+      }
+  }
+}
 
-            // Show RegisterView as a sheet when showRegister is true
-            .sheet(isPresented: $showRegister) {
-                RegisterView(authVM: authVM)
-            }
-        }
-    }
+// ============================================================
+// CourseRowView — a single row in the list
+// ============================================================
+// Breaking this into its own View keeps CourseListView clean.
+// It receives one Course and displays it.
+// ============================================================
+struct CourseRowView: View {
+
+  let course: Course
+
+  var body: some View {
+      VStack(alignment: .leading, spacing: 4) {
+
+          Text(course.courseTitle)
+              .font(.headline)
+
+          HStack {
+              // Course ID badge
+              Text(course.courseID)
+                  .font(.caption)
+                  .fontWeight(.semibold)
+                  .padding(.horizontal, 8)
+                  .padding(.vertical, 3)
+                  .background(Color.blue.opacity(0.15))
+                  .foregroundStyle(.blue)
+                  .cornerRadius(6)
+
+              Spacer()
+
+              // Credit hours
+              Text("\(course.creditHours) cr hrs")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+          }
+      }
+      .padding(.vertical, 4)
+  }
 }
 

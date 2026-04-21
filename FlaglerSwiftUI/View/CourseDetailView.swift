@@ -1,91 +1,77 @@
-
 // ============================================================
-// Form for adding a new course.
-// Calls courseVM.addCourse() when the user taps Save.
+// Shows full details for a single course.
+// Receives a Course struct — no ViewModel needed here
+// because we're only displaying data, not fetching it.
 // ============================================================
 //  Last updated by Jeremy Wang on 4/1/26.
 
 import SwiftUI
 
-struct AddCourseView: View {
+struct CourseDetailView: View {
 
-    // Receives the CourseViewModel from CourseListView
-    // @ObservedObject — CourseListView owns it, we just observe
-    @ObservedObject var courseVM: CourseViewModel
+  // The course to display — passed in from CourseListView
+  // 'let' because we're not editing it here
+  let course: Course
 
-    // Local @State for each form field
-    @State private var courseID    = ""
-    @State private var courseTitle = ""
-    @State private var creditHours = 3   // sensible default
+  var body: some View {
+      List {
 
-    // Used to close this sheet when Save is tapped
-    @Environment(\.dismiss) var dismiss
+          // ── Course Identity ──────────────────────────────
+          Section("Course Identity") {
 
-    var body: some View {
-        NavigationStack {
-            Form {
+              // LabeledContent shows a label on the left
+              // and the value on the right — clean and simple
+              LabeledContent("Course ID") {
+                  Text(course.courseID)
+                      .fontWeight(.semibold)
+                      .foregroundStyle(.blue)
+              }
 
-                // ── Course Info section ──────────────────────
-                Section("Course Information") {
+              LabeledContent("Title") {
+                  Text(course.courseTitle)
+                      .multilineTextAlignment(.trailing)
+              }
+          }
 
-                    // Course ID field — e.g. "CIS330"
-                    TextField("Course ID (e.g. CIS330)", text: $courseID)
-                        .autocapitalization(.allCharacters)
+          // ── Credit Hours ─────────────────────────────────
+          Section("Schedule") {
+              LabeledContent("Credit Hours") {
+                  Text("\(course.creditHours)")
+                      .fontWeight(.semibold)
+              }
 
-                    // Course Title field
-                    TextField("Course Title", text: $courseTitle)
+              LabeledContent("Hours per Week") {
+                  // Typically credit hours = hours in class per week
+                  Text("\(course.creditHours) hrs")
+                      .foregroundStyle(.secondary)
+              }
+          }
 
-                    // Picker for credit hours (1–6)
-                    Picker("Credit Hours", selection: $creditHours) {
-                        ForEach(1...6, id: \.self) { hours in
-                            Text("\(hours) credit hour\(hours == 1 ? "" : "s")")
-                                .tag(hours)
-                        }
-                    }
-                }
+          // ── Summary card ─────────────────────────────────
+          Section {
+              VStack(alignment: .leading, spacing: 8) {
+                  Text(course.courseTitle)
+                      .font(.headline)
 
-                // ── Error section ────────────────────────────
-                if let error = courseVM.errorMessage {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                    }
-                }
-            }
-            .navigationTitle("Add Course")
-            .navigationBarTitleDisplayMode(.inline)
+                  HStack {
+                      Label(course.courseID, systemImage: "number")
+                          .font(.subheadline)
+                          .foregroundStyle(.blue)
 
-            // ── Toolbar buttons ──────────────────────────────
-            .toolbar {
+                      Spacer()
 
-                // Cancel — dismisses without saving
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-
-                // Save — calls ViewModel, then dismisses
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        // View calls the intent method
-                        // ViewModel does the Firestore work
-                        courseVM.addCourse(
-                            courseID:    courseID,
-                            courseTitle: courseTitle,
-                            creditHours: creditHours
-                        )
-
-                        // Only dismiss if no error occurred
-                        if courseVM.errorMessage == nil {
-                            dismiss()
-                        }
-                    }
-                    .fontWeight(.semibold)
-                    // Disable Save if required fields are empty
-                    .disabled(courseID.isEmpty || courseTitle.isEmpty)
-                }
-            }
-        }
-    }
+                      Label("\(course.creditHours) credit hours", systemImage: "clock")
+                          .font(.subheadline)
+                          .foregroundStyle(.secondary)
+                  }
+              }
+              .padding(.vertical, 6)
+          } header: {
+              Text("Summary")
+          }
+      }
+      .navigationTitle(course.courseID)
+      .navigationBarTitleDisplayMode(.large)
+  }
 }
+

@@ -34,36 +34,6 @@
             endingLineNumber = "50"
             landmarkName = "calculate()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "8C42590D-D696-4495-9015-C481254DC3EC - 3eed3ad1328cf552"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "FlaglerSwiftUI.TipViewModel.calculate() -&gt; ()"
-                  moduleName = "FlaglerSwiftUI.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/jwang/Desktop/CIS331/Module3/FlaglerSwiftUI/FlaglerSwiftUI/ViewModel/TipViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "50"
-                  endingLineNumber = "50">
-               </Location>
-               <Location
-                  uuid = "8C42590D-D696-4495-9015-C481254DC3EC - 3eed3ad1328cf552"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "FlaglerSwiftUI.TipViewModel.calculate() -&gt; ()"
-                  moduleName = "FlaglerSwiftUI.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/jwang/Desktop/CIS331/Module3/FlaglerSwiftUI/FlaglerSwiftUI/ViewModel/TipViewModel.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "50"
-                  endingLineNumber = "50">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

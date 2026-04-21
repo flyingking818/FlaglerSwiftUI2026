@@ -1,58 +1,48 @@
-//
-//  TipModel.swift
-//  FlaglerSwiftUI
-//
+// ============================================================
+// This is the Model — it defines the shape of our data.
+// It has no SwiftUI, no Firebase logic, just plain Swift.
+// ============================================================
 //  Last updated by Jeremy Wang on 4/1/26.
-//
 
-import Foundation   //  import SwiftUI ← NEVER in the Model
+import Foundation
 
-struct TipModel {
+// Identifiable — lets SwiftUI use this in a List or ForEach
+// Codable    — lets Firebase automatically convert this
+//              struct to/from a dictionary (no manual mapping)
+struct Course: Identifiable, Codable {
 
-  // Result is a plain data container — no UI attached.
-  // Tip: In your Converter app this could be a Double or a custom struct.
-  struct Result {
-      let tipAmount:    Double  // e.g. 9.00
-      let totalAmount:  Double  // e.g. 59.00
-      let amountEach:   Double  // e.g. 19.67 when split 3 ways
+  // 'var id' is required by Identifiable
+  // Firestore uses this as the document ID
+  var id: String
+
+  // The three fields required by the project spec
+  var courseID:    String   // e.g. "CIS331"
+  var courseTitle: String   // e.g. "Mobile App Development"
+  var creditHours: Int      // e.g. 3
+
+  // This tells Codable to map our 'id' property
+  // to the Firestore field called 'id'
+  enum CodingKeys: String, CodingKey {
+      case id
+      case courseID
+      case courseTitle
+      case creditHours
   }
-
-  // ─── Main calculation function ───────────────────────
-  // The ViewModel calls ONLY this function.
-  // Notice: takes plain Swift types, returns a plain struct.
-  // Tip: Your ConverterModel.convert(_:from:to:category:)
   
-  static func calculate(
-      bill:       Double,   // raw bill total, e.g. 50.00
-      tipPercent: Double,   // e.g. 18.0 (for 18%)
-      splitBy:    Int       // number of people splitting the bill
-  ) -> Result {
+  //Extra notes:
+  /* Firestore stores data like this in Json (JavaScript Object Notation) format, which you'll learn more about in our CIS 325 course.
+   
+   {
+     "courseID": "CIS331",
+     "courseTitle": "Mobile App Development",
+     "creditHours": 3
+   }
 
-      // Step 1 — compute the tip dollar amount
-      let tipAmount   = bill * (tipPercent / 100.0)
+   With Codable, Swift can automatically:
 
-      // Step 2 — add tip to the original bill
-      let totalAmount = bill + tipAmount
+   convert Firestore data → Course
+   convert Course → Firestore data
 
-      // Step 3 — divide among the party
-      //max() is a built-in Swift function that returns whichever of the two numbers is larger.
-      //So here, it basically means: give me splitBy, but never let it go below 1. So at least, we've got one person to pay the bill! :)
-      // Guard against divide-by-zero: set splitBy to minimum 1
-      let people      = max(1, splitBy)
-      let amountEach  = totalAmount / Double(people)
-
-      // Return the data bundle (an object). ViewModel will format it
-      // So you can expand on this as you see fit. Think about how to use this for your converter app.
-      return Result(
-          tipAmount:   tipAmount,
-          totalAmount: totalAmount,
-          amountEach:  amountEach
-      )
-  }
-
-  // ─── Supported tip presets ────────────────────────────
-  // Tip: Your ConverterModel.units(for:) array  - we need to make this conditional! :) switch...case, or if...else if
-  // The View's Picker reads this list — Model owns the data.
-  static let tipPresets: [Double] = [10, 15, 18, 20, 25]
-  static let splitOptions: [Int]   = [1, 2, 3, 4, 5, 6]
+   No manual parsing needed.
+   */
 }
