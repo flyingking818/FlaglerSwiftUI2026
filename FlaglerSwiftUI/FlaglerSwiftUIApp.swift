@@ -51,12 +51,12 @@ struct FlaglerSwiftUIApp: App {
                            Label("Tip Cal", systemImage: "dollarsign")
                        }
                  
-                   /*
+                   
                    CourseListView(authVM: authVM)
                        .tabItem {
                            Label("Courses", systemImage: "book.fill")
                        }
-                    */
+                
                }
 
            } else {
